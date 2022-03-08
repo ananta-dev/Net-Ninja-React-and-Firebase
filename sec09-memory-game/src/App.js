@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import SingleCard from "./components/SingleCard";
 
 const cardImages = [
-    { src: "/img/helmet-1.png" },
-    { src: "/img/potion-1.png" },
-    { src: "/img/ring-1.png" },
-    { src: "/img/scroll-1.png" },
-    { src: "/img/shield-1.png" },
-    { src: "/img/sword-1.png" },
+    { src: "/img/helmet-1.png", matched: false },
+    { src: "/img/potion-1.png", matched: false },
+    { src: "/img/ring-1.png", matched: false },
+    { src: "/img/scroll-1.png", matched: false },
+    { src: "/img/shield-1.png", matched: false },
+    { src: "/img/sword-1.png", matched: false },
 ];
 
 function App() {
@@ -16,6 +16,7 @@ function App() {
     const [turns, setTurns] = useState(0);
     const [choiceOne, setChoiceOne] = useState(null);
     const [choiceTwo, setChoiceTwo] = useState(null);
+    const [disabled, setDisabled] = useState(false);
 
     const shuffleCards = () => {
         const shuffledCards = [...cardImages, ...cardImages]
@@ -23,8 +24,14 @@ function App() {
             .map(card => ({ ...card, id: Math.random() }));
 
         setCards(shuffledCards);
+        setChoiceOne(null);
+        setChoiceTwo(null);
         setTurns(0);
     };
+
+    useEffect(() => {
+        shuffleCards();
+    }, []);
 
     const revealCardAction = card => {
         choiceOne ? setChoiceTwo(card) : setChoiceOne(card);
@@ -34,18 +41,28 @@ function App() {
         setChoiceOne(null);
         setChoiceTwo(null);
         setTurns(prevTurns => prevTurns + 1);
+        setDisabled(false);
     };
 
     useEffect(() => {
-        if (choiceTwo) {
+        if (choiceOne && choiceTwo) {
+            setDisabled(true);
             if (choiceOne.src === choiceTwo.src) {
-                console.log("The cards match");
+                setCards(prevCards =>
+                    prevCards.map(card =>
+                        card.src === choiceTwo.src
+                            ? { ...card, matched: true }
+                            : card
+                    )
+                );
+                resetTurn();
             } else {
-                console.log("The cards do NOT match");
+                setTimeout(() => resetTurn(), 1000);
             }
-            resetTurn();
         }
-    }, [choiceTwo]);
+    }, [choiceOne, choiceTwo]);
+
+    console.log(cards);
 
     return (
         <div className='App'>
@@ -57,9 +74,16 @@ function App() {
                         key={card.id}
                         card={card}
                         revealCardAction={revealCardAction}
+                        flipped={
+                            card === choiceOne ||
+                            card === choiceTwo ||
+                            card.matched
+                        }
+                        disabled={disabled}
                     />
                 ))}
             </div>
+            <p>Turns: {turns}</p>
         </div>
     );
 }
